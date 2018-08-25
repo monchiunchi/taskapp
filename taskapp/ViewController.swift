@@ -10,17 +10,19 @@ import UIKit
 import RealmSwift
 import UserNotifications
 
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate {
     @IBOutlet weak var tableview: UITableView!
+    @IBOutlet weak var SearchBar: UISearchBar!
     
     let realm = try! Realm()
-    
     var taskArray = try! Realm().objects(Task.self).sorted(byKeyPath: "date", ascending: false)
-    
+    var searchword = ""
+
     override func viewDidLoad() {
         super.viewDidLoad()
         tableview.delegate = self
         tableview.dataSource = self
+        SearchBar.delegate = self
 
     }
 
@@ -30,8 +32,9 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return taskArray.count
+            return taskArray.count
     }
+    
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
@@ -43,9 +46,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         formatter.dateFormat = "yyyy-MM-dd HH:mm"
         
         let dateString:String = formatter.string(from: task.date)
-        cell.detailTextLabel?.text = dateString
+        cell.detailTextLabel?.text = "\(dateString), カテゴリー：\(task.category)"
         
         return cell
+        
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -69,14 +73,34 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             }//realm
             
             center.getPendingNotificationRequests { (requests: [UNNotificationRequest]) in
+                
                 for request in requests {
                     print("/---------------")
                     print(request)
                     print("---------------/")
                 }//2
+            }
         }
     }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.endEditing(true)
+            }//エンター時に動く
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        self.searchword = searchBar.text!//サーチバーで入力したものを格納
+        if searchword == "" {
+            taskArray = realm.objects(Task.self).sorted(byKeyPath: "date", ascending: false)
+        }else{
+            let predicate = NSPredicate(format: "category CONTAINS %@", "\(searchword)")
+            taskArray = realm.objects(Task.self).filter(predicate)
+        }
+            tableview.reloadData()//画面再読みこみ
     }
+        //taskのカテゴリーと格納した入力語をCONTAINSでフィルターし、taskArrayに再格納
+        //入力が変更されるたびに動く
+    
+    
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let inputViewController: InputViewController = segue.destination as! InputViewController
@@ -102,5 +126,4 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         tableview.reloadData()
     }
 
-    
 }

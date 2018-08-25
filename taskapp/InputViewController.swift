@@ -16,6 +16,7 @@ class InputViewController: UIViewController {
     @IBOutlet weak var titleTextView: UITextField!
     @IBOutlet weak var textView: UITextView!
     @IBOutlet weak var dateView: UIDatePicker!
+    @IBOutlet weak var categoryTextView: UITextField!
     
     var task: Task!
     let realm = try! Realm()
@@ -24,11 +25,12 @@ class InputViewController: UIViewController {
         super.viewDidLoad()
 
         let tapGes: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        self.view.addGestureRecognizer(tapGes) //viewは定義してない
+        self.view.addGestureRecognizer(tapGes) //他画面をタップしてキーボード格納@objc func dismissKeyBoard...
         
         titleTextView.text = task.title
         textView.text = task.contents
         dateView.date = task.date
+        categoryTextView.text = task.category
         
     }
 
@@ -41,6 +43,12 @@ class InputViewController: UIViewController {
             self.task.title = self.titleTextView.text!//optional?
             self.task.contents = self.textView.text
             self.task.date = self.dateView.date
+            if self.categoryTextView.text == "" {
+                self.task.category = "不明"
+            }else{
+                self.task.category = self.categoryTextView.text!
+            }//カテゴリー無登録で不明を格納
+            
             self.realm.add(self.task, update: true)//追加.add
         }
         setNotification(task: task) //通知メソッド↓
@@ -62,6 +70,7 @@ class InputViewController: UIViewController {
         }else{
             content.body = task.contents
         }
+        
         content.sound = UNNotificationSound.default()
         
         let calender = Calendar.current
